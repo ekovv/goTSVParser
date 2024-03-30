@@ -3,6 +3,7 @@ package watcher
 import (
 	"fmt"
 	"goTSVParser/config"
+	"goTSVParser/internal/shema"
 	"os"
 	"sync"
 	"time"
@@ -17,6 +18,12 @@ type Watcher struct {
 	timer   int
 	fromDir string
 	files   map[string]bool
+}
+
+func (w *Watcher) InitCheckedFiles(files []shema.ParsedFiles) {
+	for _, file := range files {
+		w.files[file.File] = true
+	}
 }
 
 func (s *Watcher) Scan(out chan string) {
