@@ -18,11 +18,11 @@ type Tsv struct {
 	InvertBit    string `tsv:"invert_bit"`
 }
 
-type ParsedFiles struct {
-	File string
-}
-
 type Files struct {
 	File string
 	Err  string
+}
+
+type ParsedFiles struct {
+	File string
 }
