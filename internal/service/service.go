@@ -31,8 +31,17 @@ func NewService(storage domains.Storage, watcher *watcher.Watcher, config config
 
 func (s *Service) Scanner() error {
 	const op = "service.Scanner"
+
+	checkedFiles, err := s.storage.GetCheckedFiles()
+	if err != nil {
+		s.logger.Info(fmt.Sprintf("%s : %w", op, err))
+		return fmt.Errorf("failed to get checked files")
+	}
+	s.watcher.InitCheckedFiles(checkedFiles)
+
 	out := make(chan string)
 	go s.watcher.Scan(out)
+
 	for file := range out {
 		tsv, unitGuid, err := s.ParseFile(file)
 		if err != nil {
