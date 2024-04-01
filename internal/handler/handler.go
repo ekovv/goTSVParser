@@ -25,11 +25,12 @@ func NewHandler(service domains.Service, cnf config.Config) *Handler {
 	return h
 }
 
-func (s *Handler) Start() {
+func (s *Handler) Start() error {
 	err := s.engine.Run(s.config.Host)
 	if err != nil {
-		return
+		return err
 	}
+	return nil
 }
 
 func (s *Handler) GetAll(c *gin.Context) {
