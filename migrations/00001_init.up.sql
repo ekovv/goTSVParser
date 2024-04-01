@@ -17,7 +17,6 @@ CREATE TABLE Occurrence (
                      InvertBit    VARCHAR(255)
 );
 CREATE TABLE checkedFiles (
-                              ID           SERIAL PRIMARY KEY,
                               name VARCHAR(255) PRIMARY KEY,
                               error VARCHAR(255)
 );

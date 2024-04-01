@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"github.com/golang-migrate/migrate/v4"
@@ -87,4 +88,38 @@ func (s *DBStorage) GetCheckedFiles() ([]shema.ParsedFiles, error) {
 		files = append(files, f)
 	}
 	return files, nil
+}
+
+func (s *DBStorage) GetAllGuids(ctx context.Context, unitGuid string) ([]shema.Tsv, error) {
+	query := "SELECT number, mqtt, inventoryid, unitguid, messageid, messagetext, context, messageclass, level, area, address, block, type, bit, invertbit FROM occurrence WHERE unitguid = $1"
+	rows, err := s.conn.QueryContext(ctx, query, unitGuid)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var data []shema.Tsv
+	for rows.Next() {
+		var d shema.Tsv
+		err = rows.Scan(&d.Number, &d.MQTT, &d.InventoryID, &d.UnitGUID, &d.MessageID, &d.MessageText, &d.Context, &d.MessageClass,
+			&d.Level, &d.Area, &d.Address, &d.Block, &d.Type, &d.Bit, &d.InvertBit)
+		if err != nil {
+			return nil, fmt.Errorf("error put in struct: %w", err)
+		}
+		data = append(data, d)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("error rows: %w", err)
+	}
+	return data, nil
+}
+
+func (s *DBStorage) ShutDown() error {
+	if err := s.conn.Close(); err != nil {
+		return fmt.Errorf("error closing db: %w", err)
+	}
+
+	return nil
+
 }

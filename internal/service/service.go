@@ -1,8 +1,10 @@
 package service
 
 import (
+	"context"
 	"encoding/csv"
 	"fmt"
+	"github.com/signintech/gopdf"
 	"go.uber.org/zap"
 	"goTSVParser/config"
 	"goTSVParser/internal/constants"
@@ -44,20 +46,38 @@ func (s *Service) Scanner() error {
 
 	for file := range out {
 		tsv, unitGuid, err := s.ParseFile(file)
+		errForDB := ""
 		if err != nil {
 			s.logger.Info(fmt.Sprintf("%s : %w", op, err))
+			errForDB = err.Error()
 			continue
 		}
+
 		f := shema.Files{
 			File: file,
-			Err:  err.Error(),
+			Err:  errForDB,
 		}
 		err = s.storage.SaveFiles(f)
 		if err != nil {
 			s.logger.Info(fmt.Sprintf("%s : %w", op, err))
 			return err
 		}
+
+		for _, ts := range tsv {
+			err = s.storage.Save(ts)
+			if err != nil {
+				s.logger.Info(fmt.Sprintf("%s : %w", op, err))
+				return fmt.Errorf("failed to save data in db: %w", err)
+			}
+		}
+
+		err = s.WritePDF(tsv, unitGuid)
+		if err != nil {
+			s.logger.Info(fmt.Sprintf("%s : %w", op, err))
+			return fmt.Errorf("failed to write pdf: %w", err)
+		}
 	}
+
 	return nil
 }
 
@@ -131,4 +151,103 @@ func (s *Service) ParseFile(fileName string) ([]shema.Tsv, []string, error) {
 		data = append(data, t)
 	}
 	return data, array, nil
+}
+
+func (s *Service) WritePDF(tsv []shema.Tsv, unitGuid []string) error {
+	const op = "service.WritePDF"
+
+	for _, guid := range unitGuid {
+		pdf := gopdf.GoPdf{}
+		pdf.Start(gopdf.Config{PageSize: *gopdf.PageSizeA4})
+		pdf.AddPage()
+
+		defer pdf.Close()
+
+		err := pdf.AddTTFFont("LiberationSerif-Regular", "resources/LiberationSerif-Regular.ttf")
+		if err != nil {
+			s.logger.Info(fmt.Sprintf("%s : %w", op, err))
+			return fmt.Errorf("can't add font: %w", err)
+		}
+
+		err = pdf.SetFont("LiberationSerif-Regular", "", 14)
+		if err != nil {
+			s.logger.Info(fmt.Sprintf("%s : %w", op, err))
+			return fmt.Errorf("can't set font: %w", err)
+		}
+
+		for _, t := range tsv {
+			var resultArray []string
+			if guid == t.UnitGUID {
+				pdf.AddPage()
+
+				resultArray = append(resultArray, "n: "+strings.TrimSpace(t.Number))
+				resultArray = append(resultArray, "mqtt: "+strings.TrimSpace(t.MQTT))
+				resultArray = append(resultArray, "invid: "+strings.TrimSpace(t.InventoryID))
+				resultArray = append(resultArray, "unit_guid: "+strings.TrimSpace(t.UnitGUID))
+				resultArray = append(resultArray, "msg_id: "+strings.TrimSpace(t.MessageID))
+				resultArray = append(resultArray, "text: "+strings.TrimSpace(t.MessageText))
+				resultArray = append(resultArray, "context: "+strings.TrimSpace(t.Context))
+				resultArray = append(resultArray, "class: "+strings.TrimSpace(t.MessageClass))
+				resultArray = append(resultArray, "level: "+strings.TrimSpace(t.Level))
+				resultArray = append(resultArray, "area: "+strings.TrimSpace(t.Area))
+				resultArray = append(resultArray, "addr: "+strings.TrimSpace(t.Address))
+				resultArray = append(resultArray, "block: "+strings.TrimSpace(t.Block))
+				resultArray = append(resultArray, "type: "+strings.TrimSpace(t.Type))
+				resultArray = append(resultArray, "bit: "+strings.TrimSpace(t.Bit))
+				resultArray = append(resultArray, "invert_bit: "+strings.TrimSpace(t.InvertBit))
+
+				y := 20
+				for _, str := range resultArray {
+					pdf.SetXY(10, float64(y))
+					err := pdf.Text(str)
+					if err != nil {
+						s.logger.Info(fmt.Sprintf("%s : %w", op, err))
+						return fmt.Errorf("can't write string to PDF: %w", err)
+					}
+					y += 20
+				}
+			}
+		}
+
+		resultFile := s.config.DirectoryTo + "/" + guid + ".pdf"
+		err = pdf.WritePdf(resultFile)
+		if err != nil {
+			s.logger.Info(fmt.Sprintf("%s : %w", op, err))
+			return fmt.Errorf("failed to write result")
+		}
+
+	}
+	return nil
+}
+
+func (s *Service) GetAll(ctx context.Context, r shema.Request) ([][]shema.Tsv, error) {
+	const op = "service.GetAll"
+
+	tsvFromDB, err := s.storage.GetAllGuids(ctx, r.UnitGUID)
+	if err != nil {
+		s.logger.Info(fmt.Sprintf("%s : %w", op, err))
+		return nil, err
+	}
+	var resultArray [][]shema.Tsv
+
+	arrayWithPage := SubArray(r.Page, tsvFromDB)
+	for i := 0; i < len(arrayWithPage); i += r.Limit {
+		end := i + r.Limit
+
+		if end > len(arrayWithPage) {
+			end = len(arrayWithPage)
+		}
+
+		resultArray = append(resultArray, arrayWithPage[i:end])
+	}
+
+	return resultArray, nil
+}
+
+func SubArray(startIndex int, data []shema.Tsv) []shema.Tsv {
+	if startIndex < 0 || startIndex >= len(data) {
+		return nil
+	}
+
+	return data[startIndex:]
 }
