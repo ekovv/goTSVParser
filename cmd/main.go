@@ -29,12 +29,7 @@ func main() {
 			log.Fatal(err)
 		}
 	}()
-	go func() {
-		err := h.Start()
-		if err != nil {
-			log.Fatal(err)
-		}
-	}()
+	go h.Start()
 
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)

@@ -10,6 +10,9 @@ import (
 
 type Config struct {
 	Host            string `json:"host"`
+	TLS             bool   `json:"tls"`
+	Certificate     string `json:"certificate"`
+	PrivateKey      string `json:"private"`
 	DirectoryFrom   string `json:"dir_from"`
 	DirectoryTo     string `json:"dir_to"`
 	DB              string `json:"dsn"`
@@ -19,6 +22,9 @@ type Config struct {
 
 type F struct {
 	host            *string
+	tls             *bool
+	certificate     *string
+	privateKey      *string
 	directoryFrom   *string
 	directoryTo     *string
 	db              *string
@@ -32,6 +38,9 @@ const addr = "localhost:8080"
 
 func init() {
 	f.host = flag.String("a", addr, "-a=")
+	f.tls = flag.Bool("s", false, "-t=")
+	f.certificate = flag.String("cert", "", "-cert=path_to_certificate")
+	f.privateKey = flag.String("key", "", "-key=path_to_key")
 	f.directoryFrom = flag.String("f", "", "-f=from")
 	f.db = flag.String("d", "", "-d=db")
 	f.directoryTo = flag.String("t", "", "-t=to")
@@ -44,6 +53,12 @@ func New() (c Config) {
 	flag.Parse()
 	if envHost := os.Getenv("HOST"); envHost != "" {
 		f.host = &envHost
+	}
+	if envCert := os.Getenv("CERTIFICATE"); envCert != "" {
+		f.certificate = &envCert
+	}
+	if envKey := os.Getenv("PRIVATE_KEY"); envKey != "" {
+		f.privateKey = &envKey
 	}
 	if envRunDirectoryFrom := os.Getenv("DIRECTORY_FROM"); envRunDirectoryFrom != "" {
 		f.directoryFrom = &envRunDirectoryFrom
@@ -59,6 +74,9 @@ func New() (c Config) {
 		f.refreshInterval = &refreshInterval
 	}
 	c.Host = *f.host
+	c.TLS = *f.tls
+	c.Certificate = *f.certificate
+	c.PrivateKey = *f.privateKey
 	c.DirectoryFrom = *f.directoryFrom
 	c.DB = *f.db
 	c.DirectoryTo = *f.directoryTo
