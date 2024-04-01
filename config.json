@@ -1,0 +1,10 @@
+{
+  "host": "0.0.0.0:8081",
+  "tls": false,
+  "certificate": "",
+  "private": "",
+  "dir_from": "from",
+  "dir_to": "to",
+  "dsn": "postgres://user:password@db:5432/dbname?sslmode=disable",
+  "refresh_interval": 10
+}

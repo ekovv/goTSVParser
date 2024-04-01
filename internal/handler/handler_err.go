@@ -10,6 +10,7 @@ import (
 
 func HandlerErr(c *gin.Context, err error) {
 	var UnmarshalTypeError *json.UnmarshalTypeError
+
 	if err != nil {
 		switch {
 		case errors.As(err, &UnmarshalTypeError):

@@ -30,6 +30,7 @@ func main() {
 		}
 	}()
 	go h.Start()
+
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 	<-quit

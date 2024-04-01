@@ -36,7 +36,7 @@ func (s *Service) Scanner() error {
 
 	checkedFiles, err := s.storage.GetCheckedFiles()
 	if err != nil {
-		s.logger.Info(fmt.Sprintf("%s : %w", op, err))
+		s.logger.Info(fmt.Sprintf("%s : %v", op, err))
 		return fmt.Errorf("failed to get checked files")
 	}
 	s.watcher.InitCheckedFiles(checkedFiles)
@@ -48,7 +48,7 @@ func (s *Service) Scanner() error {
 		tsv, unitGuid, err := s.ParseFile(file)
 		errForDB := ""
 		if err != nil {
-			s.logger.Info(fmt.Sprintf("%s : %w", op, err))
+			s.logger.Info(fmt.Sprintf("%s : %v", op, err))
 			errForDB = err.Error()
 			continue
 		}
@@ -59,21 +59,21 @@ func (s *Service) Scanner() error {
 		}
 		err = s.storage.SaveFiles(f)
 		if err != nil {
-			s.logger.Info(fmt.Sprintf("%s : %w", op, err))
+			s.logger.Info(fmt.Sprintf("%s : %v", op, err))
 			return err
 		}
 
 		for _, ts := range tsv {
 			err = s.storage.Save(ts)
 			if err != nil {
-				s.logger.Info(fmt.Sprintf("%s : %w", op, err))
+				s.logger.Info(fmt.Sprintf("%s : %v", op, err))
 				return fmt.Errorf("failed to save data in db: %w", err)
 			}
 		}
 
 		err = s.WritePDF(tsv, unitGuid)
 		if err != nil {
-			s.logger.Info(fmt.Sprintf("%s : %w", op, err))
+			s.logger.Info(fmt.Sprintf("%s : %v", op, err))
 			return fmt.Errorf("failed to write pdf: %w", err)
 		}
 	}
@@ -85,12 +85,12 @@ func (s *Service) ParseFile(fileName string) ([]shema.Tsv, []string, error) {
 	const op = "service.ParseFile"
 	file, err := os.Open(s.config.DirectoryFrom + "/" + fileName)
 	if err != nil {
-		s.logger.Info(fmt.Sprintf("%s : %w", op, err))
+		s.logger.Info(fmt.Sprintf("%s : %v", op, err))
 		return nil, nil, err
 	}
 
 	if !strings.HasSuffix(file.Name(), ".tsv") {
-		s.logger.Info(fmt.Sprintf("%s : %w", op, constants.ErrNotTSV))
+		s.logger.Info(fmt.Sprintf("%s : %v", op, constants.ErrNotTSV))
 		return nil, nil, constants.ErrNotTSV
 	}
 
@@ -111,7 +111,7 @@ func (s *Service) ParseFile(fileName string) ([]shema.Tsv, []string, error) {
 			if err == io.EOF {
 				return data, array, nil
 			}
-			s.logger.Info(fmt.Sprintf("%s : %w", op, err))
+			s.logger.Info(fmt.Sprintf("%s : %v", op, err))
 			return nil, nil, err
 		}
 		if str == nil {
@@ -165,13 +165,13 @@ func (s *Service) WritePDF(tsv []shema.Tsv, unitGuid []string) error {
 
 		err := pdf.AddTTFFont("LiberationSerif-Regular", "resources/LiberationSerif-Regular.ttf")
 		if err != nil {
-			s.logger.Info(fmt.Sprintf("%s : %w", op, err))
+			s.logger.Info(fmt.Sprintf("%s : %v", op, err))
 			return fmt.Errorf("can't add font: %w", err)
 		}
 
 		err = pdf.SetFont("LiberationSerif-Regular", "", 14)
 		if err != nil {
-			s.logger.Info(fmt.Sprintf("%s : %w", op, err))
+			s.logger.Info(fmt.Sprintf("%s : %v", op, err))
 			return fmt.Errorf("can't set font: %w", err)
 		}
 
@@ -201,7 +201,7 @@ func (s *Service) WritePDF(tsv []shema.Tsv, unitGuid []string) error {
 					pdf.SetXY(10, float64(y))
 					err := pdf.Text(str)
 					if err != nil {
-						s.logger.Info(fmt.Sprintf("%s : %w", op, err))
+						s.logger.Info(fmt.Sprintf("%s : %v", op, err))
 						return fmt.Errorf("can't write string to PDF: %w", err)
 					}
 					y += 20
@@ -212,7 +212,7 @@ func (s *Service) WritePDF(tsv []shema.Tsv, unitGuid []string) error {
 		resultFile := s.config.DirectoryTo + "/" + guid + ".pdf"
 		err = pdf.WritePdf(resultFile)
 		if err != nil {
-			s.logger.Info(fmt.Sprintf("%s : %w", op, err))
+			s.logger.Info(fmt.Sprintf("%s : %v", op, err))
 			return fmt.Errorf("failed to write result")
 		}
 
@@ -225,8 +225,8 @@ func (s *Service) GetAll(ctx context.Context, r shema.Request) ([][]shema.Tsv, e
 
 	tsvFromDB, err := s.storage.GetAllGuids(ctx, r.UnitGUID)
 	if err != nil {
-		s.logger.Info(fmt.Sprintf("%s : %w", op, err))
-		return nil, err
+		s.logger.Info(fmt.Sprintf("%s : %v", op, err))
+		return nil, constants.ErrNotFound
 	}
 	var resultArray [][]shema.Tsv
 
