@@ -26,6 +26,7 @@ func TestHandler_GetAll(t *testing.T) {
 		wantCode    int
 		want        [][]shema.Tsv
 	}{
+
 		{
 			name: "OK#1",
 			body: shema.Request{
