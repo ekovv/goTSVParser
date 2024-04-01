@@ -18,11 +18,17 @@ type Tsv struct {
 	InvertBit    string `tsv:"invert_bit"`
 }
 
+type Files struct {
+	File string
+	Err  string
+}
+
 type ParsedFiles struct {
 	File string
 }
 
-type Files struct {
-	File string
-	Err  string
+type Request struct {
+	UnitGUID string `json:"unit_guid"`
+	Limit    int    `json:"limit"`
+	Page     int    `json:"page"`
 }

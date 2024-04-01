@@ -1,0 +1,7 @@
+{
+  "host": "localhost:8080",
+  "dir_from": "from",
+  "dir_to": "to",
+  "dsn": "postgres://dmitrydenisov:ekovv16@localhost:5432/tsv?sslmode=disable",
+  "refresh_interval": 10
+}
