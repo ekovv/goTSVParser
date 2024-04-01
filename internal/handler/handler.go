@@ -56,14 +56,11 @@ func (s *Handler) Start() {
 			log.Fatal(err)
 		}
 
-		// создаём сертификат x.509
 		certBytes, err := x509.CreateCertificate(rand.Reader, cert, cert, &privateKey.PublicKey, privateKey)
 		if err != nil {
 			log.Fatal(err)
 		}
 
-		// кодируем сертификат и ключ в формате PEM, который
-		// используется для хранения и обмена криптографическими ключами
 		var certPEM bytes.Buffer
 		pem.Encode(&certPEM, &pem.Block{
 			Type:  "CERTIFICATE",
