@@ -48,12 +48,20 @@ func (s *DBStorage) CheckConnection() error {
 	return nil
 }
 
-func (s *DBStorage) SaveFiles(sh shema.Files) error {
-	insertQuery := `INSERT INTO checkedfiles(name, error) VALUES ($1, $2) ON CONFLICT (name) DO NOTHING`
+func (s *DBStorage) SaveFilesWithErr(sh shema.Files) error {
+	insertQuery := `INSERT INTO checkedFilesWithErr(name, error) VALUES ($1, $2) ON CONFLICT (name) DO NOTHING`
 	_, err := s.conn.Exec(insertQuery, sh.File, sh.Err)
 	if err != nil {
-		fmt.Errorf("failed to save file in db %w", err)
-		return err
+		return fmt.Errorf("failed to save file with err in db %w", err)
+	}
+	return nil
+}
+
+func (s *DBStorage) SaveFiles(fileName string) error {
+	insertQuery := `INSERT INTO checkedFiles(name) VALUES ($1) ON CONFLICT (name) DO NOTHING`
+	_, err := s.conn.Exec(insertQuery, fileName)
+	if err != nil {
+		return fmt.Errorf("failed to save file in db %w", err)
 	}
 	return nil
 }
@@ -65,8 +73,7 @@ func (s *DBStorage) Save(sh shema.Tsv) error {
 		sh.Area, sh.Address, sh.Block, sh.Type, sh.Bit, sh.InvertBit)
 
 	if err != nil {
-		fmt.Errorf("failed to save in db: %v", err)
-		return err
+		return fmt.Errorf("failed to save in db: %v", err)
 	}
 	return nil
 }

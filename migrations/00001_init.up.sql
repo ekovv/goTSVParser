@@ -16,7 +16,11 @@ CREATE TABLE Occurrence (
                      Bit          VARCHAR(255),
                      InvertBit    VARCHAR(255)
 );
-CREATE TABLE checkedFiles (
+CREATE TABLE checkedFilesWithErr (
                               name VARCHAR(255) PRIMARY KEY,
                               error VARCHAR(255)
+);
+
+CREATE TABLE checkedFiles (
+                                     name VARCHAR(255) PRIMARY KEY
 );

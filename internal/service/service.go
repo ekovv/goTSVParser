@@ -41,6 +41,7 @@ func (s *Service) Worker(ctx context.Context) error {
 	out := make(chan string)
 	go s.watcher.Scan(ctx, out)
 
+loop:
 	for {
 		select {
 		case <-ctx.Done():
@@ -53,7 +54,6 @@ func (s *Service) Worker(ctx context.Context) error {
 			tsvChan, guidChan, errChan := s.parser.ParseFileAsync(file)
 			var tsvArray []shema.Tsv
 			var guidArray []string
-			var errFrom string
 
 			for {
 				select {
@@ -64,6 +64,7 @@ func (s *Service) Worker(ctx context.Context) error {
 						tsvChan = nil
 					} else {
 						tsvArray = append(tsvArray, tsv)
+
 						err = s.storage.Save(tsv)
 						if err != nil {
 							s.logger.Info(fmt.Sprintf("%s : failed to save data in db: %v", op, err))
@@ -81,7 +82,18 @@ func (s *Service) Worker(ctx context.Context) error {
 						errChan = nil
 					} else if err != nil {
 						s.logger.Info(fmt.Sprintf("%s : failed to parse file: %v", op, err))
-						errFrom = err.Error()
+
+						f := shema.Files{
+							File: file,
+							Err:  err.Error(),
+						}
+
+						err = s.storage.SaveFilesWithErr(f)
+						if err != nil {
+							s.logger.Info(fmt.Sprintf("%s : failed to save file info in db: %v", op, err))
+							return err
+						}
+						continue loop
 					}
 				}
 
@@ -90,11 +102,7 @@ func (s *Service) Worker(ctx context.Context) error {
 				}
 			}
 
-			f := shema.Files{
-				File: file,
-				Err:  errFrom,
-			}
-			err = s.storage.SaveFiles(f)
+			err = s.storage.SaveFiles(file)
 			if err != nil {
 				s.logger.Info(fmt.Sprintf("%s : failed to save file info in db: %v", op, err))
 				return err

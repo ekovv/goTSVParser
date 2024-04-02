@@ -75,8 +75,22 @@ func (_m *Storage) Save(sh shema.Tsv) error {
 	return r0
 }
 
-// SaveFiles provides a mock function with given fields: sh
-func (_m *Storage) SaveFiles(sh shema.Files) error {
+// SaveFiles provides a mock function with given fields: fileName
+func (_m *Storage) SaveFiles(fileName string) error {
+	ret := _m.Called(fileName)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(string) error); ok {
+		r0 = rf(fileName)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// SaveFilesWithErr provides a mock function with given fields: sh
+func (_m *Storage) SaveFilesWithErr(sh shema.Files) error {
 	ret := _m.Called(sh)
 
 	var r0 error

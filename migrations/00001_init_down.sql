@@ -1,2 +1,3 @@
 DROP TABLE occurrence;
-DROP TABLE checkedfiles;
+DROP TABLE checkedFiles;
+DROP TABLE checkedFilesWithErr;
