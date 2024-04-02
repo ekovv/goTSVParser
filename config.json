@@ -1,6 +1,6 @@
 {
   "host": "0.0.0.0:8081",
-  "tls": false,
+  "tls": true,
   "certificate": "",
   "private": "",
   "dir_from": "from",

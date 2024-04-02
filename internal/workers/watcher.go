@@ -1,4 +1,4 @@
-package watcher
+package workers
 
 import (
 	"fmt"
@@ -10,24 +10,23 @@ import (
 )
 
 func NewWatcher(c config.Config) *Watcher {
-	return &Watcher{timer: c.RefreshInterval, fromDir: c.DirectoryFrom, files: make(map[string]bool)}
+	return &Watcher{timer: c.RefreshInterval, fromDir: c.DirectoryFrom, files: make(map[string]struct{})}
 }
 
 type Watcher struct {
 	mutex   sync.RWMutex
 	timer   int
 	fromDir string
-	files   map[string]bool
+	files   map[string]struct{}
 }
 
 func (w *Watcher) InitCheckedFiles(files []shema.ParsedFiles) {
 	for _, file := range files {
-		w.files[file.File] = true
+		w.files[file.File] = struct{}{}
 	}
 }
 
 func (s *Watcher) Scan(out chan string) {
-	var wg sync.WaitGroup
 	go func() {
 		timer := time.NewTicker(time.Duration(s.timer) * time.Second)
 
@@ -47,18 +46,15 @@ func (s *Watcher) Scan(out chan string) {
 						s.mutex.Unlock()
 						continue
 					} else {
-						s.files[file.Name()] = true
+						s.files[file.Name()] = struct{}{}
 						s.mutex.Unlock()
 					}
-					wg.Add(1)
-					go func(filename string) {
-						defer wg.Done()
-						out <- filename
-					}(file.Name())
+					out <- file.Name()
+
+				} else {
+
 				}
 			}
-			wg.Wait()
-			time.Sleep(10 * time.Second)
 		}
 	}()
 

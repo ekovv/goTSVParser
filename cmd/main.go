@@ -6,7 +6,7 @@ import (
 	"goTSVParser/internal/handler"
 	"goTSVParser/internal/service"
 	"goTSVParser/internal/storage"
-	"goTSVParser/internal/watcher"
+	"goTSVParser/internal/workers"
 	"log"
 	"os"
 	"os/signal"
@@ -19,11 +19,13 @@ func main() {
 	if err != nil {
 		return
 	}
-	w := watcher.NewWatcher(cnfg)
-	s := service.NewService(st, w, cnfg)
+	watcher := workers.NewWatcher(cnfg)
+	parser := workers.NewParser(cnfg)
+	writer := workers.NewWriter(cnfg)
+	s := service.NewService(st, watcher, parser, writer, cnfg)
 	h := handler.NewHandler(s, cnfg)
 	go func() {
-		err := s.Scanner()
+		err := s.Worker()
 		fmt.Println(err)
 		if err != nil {
 			log.Fatal(err)

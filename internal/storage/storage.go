@@ -91,7 +91,8 @@ func (s *DBStorage) GetCheckedFiles() ([]shema.ParsedFiles, error) {
 }
 
 func (s *DBStorage) GetAllGuids(ctx context.Context, unitGuid string) ([]shema.Tsv, error) {
-	query := "SELECT number, mqtt, inventoryid, unitguid, messageid, messagetext, context, messageclass, level, area, address, block, type, bit, invertbit FROM occurrence WHERE unitguid = $1"
+	query := "SELECT number, mqtt, inventoryid, unitguid, messageid, messagetext, context, " +
+		"messageclass, level, area, address, block, type, bit, invertbit FROM occurrence WHERE unitguid = $1"
 	rows, err := s.conn.QueryContext(ctx, query, unitGuid)
 	if err != nil {
 		return nil, err
