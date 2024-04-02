@@ -7,6 +7,6 @@ import (
 
 //go:generate go run github.com/vektra/mockery/v3 --name=Service
 type Service interface {
-	Worker() error
+	Worker(ctx context.Context) error
 	GetAll(ctx context.Context, r shema.Request) ([][]shema.Tsv, error)
 }

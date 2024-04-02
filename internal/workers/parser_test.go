@@ -8,6 +8,7 @@ import (
 	"goTSVParser/internal/shema"
 	"os"
 	"reflect"
+	"sync"
 	"testing"
 )
 
@@ -115,17 +116,50 @@ func TestService_ParseFile(t *testing.T) {
 			s := &Parser{
 				dirFrom: config.Config{DirectoryFrom: tempDir}.DirectoryFrom,
 			}
-			tsv, guids, err := s.ParseFile(tt.args.file)
+			tsvChan, guidChan, errChan := s.ParseFileAsync(tt.args.file)
 
-			if !errors.Is(err, tt.wantErr) {
-				t.Errorf("ParseFile error = %v, wantErr %v", err, tt.wantErr)
+			var gotTsv []shema.Tsv
+			var gotGuids []string
+			var gotErr error
+			var wg sync.WaitGroup
+			wg.Add(3) // Increase the counter to 3
+
+			go func() {
+				defer wg.Done()
+				for tsv := range tsvChan {
+					gotTsv = append(gotTsv, tsv)
+				}
+			}()
+
+			go func() {
+				defer wg.Done()
+				for guid := range guidChan {
+					gotGuids = append(gotGuids, guid)
+				}
+			}()
+
+			// Add a new goroutine to read from the error channel
+			go func() {
+				defer wg.Done()
+				for err := range errChan {
+					if err != nil {
+						gotErr = err
+						break
+					}
+				}
+			}()
+
+			wg.Wait()
+
+			if !errors.Is(gotErr, tt.wantErr) {
+				t.Errorf("ParseFileAsync() error = %v, wantErr %v", gotErr, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(tsv, tt.wantTsv) {
-				t.Errorf("Parse() got = %v, want %v", tsv, tt.wantTsv)
+			if !reflect.DeepEqual(gotTsv, tt.wantTsv) {
+				t.Errorf("ParseFileAsync() got = %v, want %v", gotTsv, tt.wantTsv)
 			}
-			if !reflect.DeepEqual(guids, tt.wantGuids) {
-				t.Errorf("Parse() got1 = %v, want %v", guids, tt.wantGuids)
+			if !reflect.DeepEqual(gotGuids, tt.wantGuids) {
+				t.Errorf("ParseFileAsync() got1 = %v, want %v", gotGuids, tt.wantGuids)
 			}
 		})
 	}

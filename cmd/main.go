@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"goTSVParser/config"
 	"goTSVParser/internal/handler"
@@ -24,19 +25,24 @@ func main() {
 	writer := workers.NewWriter(cnfg)
 	s := service.NewService(st, watcher, parser, writer, cnfg)
 	h := handler.NewHandler(s, cnfg)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 	go func() {
-		err := s.Worker()
+		err := s.Worker(ctx)
 		fmt.Println(err)
 		if err != nil {
 			log.Fatal(err)
 		}
 	}()
-	go h.Start()
+	go h.Start(ctx)
 
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 	<-quit
 	log.Println("stopping application")
+
+	cancel()
+
 	st.ShutDown()
 	log.Println("shutting down application")
 }

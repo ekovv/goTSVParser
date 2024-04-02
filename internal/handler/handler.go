@@ -2,6 +2,7 @@ package handler
 
 import (
 	"bytes"
+	"context"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
@@ -35,7 +36,7 @@ func NewHandler(service domains.Service, cnf config.Config) *Handler {
 	return h
 }
 
-func (s *Handler) Start() {
+func (s *Handler) Start(ctx context.Context) {
 	if s.config.TLS && (s.config.PrivateKey == "" || s.config.Certificate == "") {
 		cert := &x509.Certificate{
 			SerialNumber: big.NewInt(2024),
@@ -95,11 +96,48 @@ func (s *Handler) Start() {
 
 		defer privateFile.Close()
 
-		http.ListenAndServeTLS(s.config.Host, "cerPem.crt", "private.key", s.engine.Handler())
+		server := &http.Server{
+			Addr:    s.config.Host,
+			Handler: s.engine.Handler(),
+		}
+
+		go func() {
+			<-ctx.Done()
+			if err := server.Close(); err != nil {
+				log.Fatalf("Server forced to shutdown: %v", err)
+			}
+		}()
+
+		log.Fatal(server.ListenAndServeTLS("cerPem.crt", "private.key"))
 	} else if s.config.TLS && s.config.Certificate != "" && s.config.PrivateKey != "" {
-		http.ListenAndServeTLS(s.config.Host, s.config.Certificate, s.config.PrivateKey, s.engine.Handler())
+		server := &http.Server{
+			Addr:    s.config.Host,
+			Handler: s.engine.Handler(),
+		}
+
+		go func() {
+			<-ctx.Done()
+			if err := server.Close(); err != nil {
+				log.Fatalf("Server forced to shutdown: %v", err)
+			}
+		}()
+
+		log.Fatal(server.ListenAndServeTLS(s.config.Certificate, s.config.PrivateKey))
+	} else {
+		server := &http.Server{
+			Addr:    s.config.Host,
+			Handler: s.engine.Handler(),
+		}
+
+		go func() {
+			<-ctx.Done()
+			if err := server.Close(); err != nil {
+				log.Fatalf("Server forced to shutdown: %v", err)
+			}
+		}()
+
+		log.Fatal(server.ListenAndServe())
 	}
-	s.engine.Run(s.config.Host)
 }
 
 func (s *Handler) GetAll(c *gin.Context) {

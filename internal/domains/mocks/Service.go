@@ -38,13 +38,13 @@ func (_m *Service) GetAll(ctx context.Context, r shema.Request) ([][]shema.Tsv, 
 	return r0, r1
 }
 
-// Worker provides a mock function with given fields:
-func (_m *Service) Worker() error {
-	ret := _m.Called()
+// Worker provides a mock function with given fields: ctx
+func (_m *Service) Worker(ctx context.Context) error {
+	ret := _m.Called(ctx)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func() error); ok {
-		r0 = rf()
+	if rf, ok := ret.Get(0).(func(context.Context) error); ok {
+		r0 = rf(ctx)
 	} else {
 		r0 = ret.Error(0)
 	}

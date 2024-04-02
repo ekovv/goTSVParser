@@ -28,52 +28,85 @@ func NewService(storage domains.Storage, watcher *workers.Watcher, parser *worke
 	return &Service{storage: storage, watcher: watcher, config: config, logger: logger, parser: parser, writer: writer}
 }
 
-func (s *Service) Worker() error {
+func (s *Service) Worker(ctx context.Context) error {
 	const op = "service.Worker"
 
 	checkedFiles, err := s.storage.GetCheckedFiles()
 	if err != nil {
-		s.logger.Info(fmt.Sprintf("%s : %v", op, err))
-		return fmt.Errorf("failed to get checked files")
+		s.logger.Info(fmt.Sprintf("%s : failed to get checked files: %v", op, err))
+		return err
 	}
 	s.watcher.InitCheckedFiles(checkedFiles)
 
 	out := make(chan string)
-	go s.watcher.Scan(out)
+	go s.watcher.Scan(ctx, out)
 
-	for file := range out {
-		tsv, unitGuid, err := s.parser.ParseFile(file)
-		var errFrom string
-		if err != nil {
-			s.logger.Info(fmt.Sprintf("%s : %v", op, err))
-			errFrom = err.Error()
-		}
+	for {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case file, ok := <-out:
+			if !ok {
+				return nil
+			}
 
-		f := shema.Files{
-			File: file,
-			Err:  errFrom,
-		}
-		err = s.storage.SaveFiles(f)
-		if err != nil {
-			s.logger.Info(fmt.Sprintf("%s : %v", op, err))
-			return err
-		}
+			tsvChan, guidChan, errChan := s.parser.ParseFileAsync(file)
+			var tsvArray []shema.Tsv
+			var guidArray []string
+			var errFrom string
 
-		for _, ts := range tsv {
-			err = s.storage.Save(ts)
+			for {
+				select {
+				case <-ctx.Done():
+					return ctx.Err()
+				case tsv, ok := <-tsvChan:
+					if !ok {
+						tsvChan = nil
+					} else {
+						tsvArray = append(tsvArray, tsv)
+						err = s.storage.Save(tsv)
+						if err != nil {
+							s.logger.Info(fmt.Sprintf("%s : failed to save data in db: %v", op, err))
+							return err
+						}
+					}
+				case guid, ok := <-guidChan:
+					if !ok {
+						guidChan = nil
+					} else {
+						guidArray = append(guidArray, guid)
+					}
+				case err, ok := <-errChan:
+					if !ok {
+						errChan = nil
+					} else if err != nil {
+						s.logger.Info(fmt.Sprintf("%s : failed to parse file: %v", op, err))
+						errFrom = err.Error()
+					}
+				}
+
+				if tsvChan == nil && guidChan == nil && errChan == nil {
+					break
+				}
+			}
+
+			f := shema.Files{
+				File: file,
+				Err:  errFrom,
+			}
+			err = s.storage.SaveFiles(f)
 			if err != nil {
-				s.logger.Info(fmt.Sprintf("%s : %v", op, err))
-				return fmt.Errorf("failed to save data in db: %w", err)
+				s.logger.Info(fmt.Sprintf("%s : failed to save file info in db: %v", op, err))
+				return err
+			}
+
+			err = s.writer.WritePDF(tsvArray, guidArray)
+			if err != nil {
+				s.logger.Info(fmt.Sprintf("%s : failed to write pdf: %v", op, err))
+				return err
 			}
 		}
-
-		err = s.writer.WritePDF(tsv, unitGuid)
-		if err != nil {
-			s.logger.Info(fmt.Sprintf("%s : %v", op, err))
-			return fmt.Errorf("failed to write pdf: %w", err)
-		}
 	}
-
 	return nil
 }
 
