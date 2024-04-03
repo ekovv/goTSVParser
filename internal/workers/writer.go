@@ -5,18 +5,21 @@ import (
 	"github.com/signintech/gopdf"
 	"goTSVParser/config"
 	"goTSVParser/internal/shema"
+	"os"
+	"path/filepath"
 	"strings"
 )
 
 type Writer struct {
-	dirTo string
+	dirTo   string
+	dirFrom string
 }
 
 func NewWriter(cfg config.Config) *Writer {
-	return &Writer{dirTo: cfg.DirectoryTo}
+	return &Writer{dirTo: cfg.DirectoryTo, dirFrom: cfg.DirectoryFrom}
 }
 
-func (s *Writer) WritePDF(tsv []shema.Tsv, unitGuid []string) error {
+func (s *Writer) WritePDF(tsv []shema.Tsv, unitGuid []string, filePath string) error {
 	for _, guid := range unitGuid {
 		pdf := gopdf.GoPdf{}
 		pdf.Start(gopdf.Config{PageSize: *gopdf.PageSizeA4})
@@ -67,7 +70,12 @@ func (s *Writer) WritePDF(tsv []shema.Tsv, unitGuid []string) error {
 			}
 		}
 
-		resultFile := s.dirTo + "/" + guid + ".pdf"
+		dir := filepath.Dir(strings.TrimPrefix(filePath, s.dirFrom))
+		if err := os.MkdirAll(s.dirTo+dir, 0755); err != nil {
+			return fmt.Errorf("failed to create directory: %w", err)
+		}
+
+		resultFile := s.dirTo + dir + "/" + guid + ".pdf"
 		err = pdf.WritePdf(resultFile)
 		if err != nil {
 			return fmt.Errorf("failed to write result")

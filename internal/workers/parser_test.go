@@ -7,6 +7,7 @@ import (
 	"goTSVParser/internal/constants"
 	"goTSVParser/internal/shema"
 	"os"
+	"path/filepath"
 	"reflect"
 	"sync"
 	"testing"
@@ -26,7 +27,7 @@ func TestService_ParseFile(t *testing.T) {
 	}{
 		{
 			name: "OK#1",
-			args: args{dir: "testDirectory", file: "OK1.tsv"},
+			args: args{dir: "testDirectory", file: "testDirectory/OK1.tsv"},
 			wantTsv: []shema.Tsv{
 				{
 					Number:       "5",
@@ -47,7 +48,7 @@ func TestService_ParseFile(t *testing.T) {
 		},
 		{
 			name: "OK#2",
-			args: args{dir: "testDirectory", file: "OK2.tsv"},
+			args: args{dir: "testDirectory", file: "testDirectory/OK2.tsv"},
 			wantTsv: []shema.Tsv{
 				{
 					Number:       "5",
@@ -79,7 +80,7 @@ func TestService_ParseFile(t *testing.T) {
 		},
 		{
 			name:      "BAD#1",
-			args:      args{dir: "testDirectory", file: "BAD1"},
+			args:      args{dir: "testDirectory", file: "testDirectory/BAD1"},
 			wantTsv:   nil,
 			wantGuids: nil,
 			wantErr:   constants.ErrNotTSV,
@@ -116,13 +117,13 @@ func TestService_ParseFile(t *testing.T) {
 			s := &Parser{
 				dirFrom: config.Config{DirectoryFrom: tempDir}.DirectoryFrom,
 			}
-			tsvChan, guidChan, errChan := s.ParseFileAsync(tt.args.file)
+			tsvChan, guidChan, errChan := s.ParseFileAsync(filepath.Join(tempDir, tt.args.file))
 
 			var gotTsv []shema.Tsv
 			var gotGuids []string
 			var gotErr error
 			var wg sync.WaitGroup
-			wg.Add(3) // Increase the counter to 3
+			wg.Add(3)
 
 			go func() {
 				defer wg.Done()
@@ -138,7 +139,6 @@ func TestService_ParseFile(t *testing.T) {
 				}
 			}()
 
-			// Add a new goroutine to read from the error channel
 			go func() {
 				defer wg.Done()
 				for err := range errChan {
@@ -175,7 +175,14 @@ func createTempDir(dir string, t *testing.T) (string, error) {
 }
 
 func createTempFile(dir, name string) (*os.File, error) {
-	tempFile, err := os.Create(dir + "/" + name)
+	fullPath := dir + "/" + name
+	err := os.MkdirAll(filepath.Dir(fullPath), 0755)
+	if err != nil {
+		return nil, err
+	}
+
+	// Теперь мы можем безопасно создать файл
+	tempFile, err := os.Create(fullPath)
 	if err != nil {
 		return nil, err
 	}

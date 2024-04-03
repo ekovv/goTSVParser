@@ -108,7 +108,7 @@ loop:
 				return err
 			}
 
-			err = s.writer.WritePDF(tsvArray, guidArray)
+			err = s.writer.WritePDF(tsvArray, guidArray, file)
 			if err != nil {
 				s.logger.Info(fmt.Sprintf("%s : failed to write pdf: %v", op, err))
 				return err

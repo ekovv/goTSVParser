@@ -6,6 +6,7 @@ import (
 	"goTSVParser/config"
 	"goTSVParser/internal/shema"
 	"os"
+	"path/filepath"
 	"sync"
 	"time"
 )
@@ -37,24 +38,27 @@ func (s *Watcher) Scan(ctx context.Context, out chan string) {
 			case <-ctx.Done():
 				return
 			case <-timer.C:
-				filesFromDir, err := os.ReadDir(s.fromDir)
+				err := filepath.Walk(s.fromDir, func(path string, info os.FileInfo, err error) error {
+					if err != nil {
+						return err
+					}
+					if !info.IsDir() {
+						s.mutex.Lock()
+						_, ok := s.files[path]
+						if ok {
+							s.mutex.Unlock()
+							return nil
+						} else {
+							s.files[path] = struct{}{}
+							s.mutex.Unlock()
+						}
+						out <- path
+					}
+					return nil
+				})
 				if err != nil {
 					fmt.Errorf("error reading %w", err)
 					return
-				}
-				for _, file := range filesFromDir {
-					if !file.IsDir() {
-						s.mutex.Lock()
-						_, ok := s.files[file.Name()]
-						if ok {
-							s.mutex.Unlock()
-							continue
-						} else {
-							s.files[file.Name()] = struct{}{}
-							s.mutex.Unlock()
-						}
-						out <- file.Name()
-					}
 				}
 			}
 		}

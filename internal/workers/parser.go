@@ -30,7 +30,7 @@ func (s *Parser) ParseFileAsync(fileName string) (<-chan shema.Tsv, <-chan strin
 
 		guidMap := make(map[string]bool)
 
-		file, err := os.Open(s.dirFrom + "/" + fileName)
+		file, err := os.Open(fileName)
 		if err != nil {
 			errChan <- err
 			return
