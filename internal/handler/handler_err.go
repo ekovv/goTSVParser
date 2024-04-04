@@ -8,9 +8,9 @@ import (
 	"net/http"
 )
 
-func HandlerErr(c *gin.Context, err error) {
-	var UnmarshalTypeError *json.UnmarshalTypeError
+var UnmarshalTypeError *json.UnmarshalTypeError
 
+func HandlerErr(c *gin.Context, err error) {
 	if err != nil {
 		switch {
 		case errors.As(err, &UnmarshalTypeError):

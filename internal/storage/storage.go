@@ -120,6 +120,10 @@ func (s *DBStorage) GetAllGuids(ctx context.Context, unitGuid string) ([]shema.T
 	if err = rows.Err(); err != nil {
 		return nil, fmt.Errorf("error rows: %w", err)
 	}
+	if len(data) == 0 {
+		return nil, fmt.Errorf("no rows found with the provided unitguid: %s", unitGuid)
+	}
+
 	return data, nil
 }
 
