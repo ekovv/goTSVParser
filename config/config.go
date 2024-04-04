@@ -40,7 +40,7 @@ const addr = "localhost:8080"
 
 func init() {
 	f.host = flag.String("a", addr, "-a=")
-	f.tls = flag.Bool("s", false, "-t=")
+	f.tls = flag.Bool("tls", false, "-tls=")
 	f.certificate = flag.String("cert", "", "-cert=path_to_certificate")
 	f.privateKey = flag.String("key", "", "-key=path_to_key")
 	f.directoryFrom = flag.String("f", "", "-f=from")
