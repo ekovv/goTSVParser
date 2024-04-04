@@ -181,7 +181,6 @@ func createTempFile(dir, name string) (*os.File, error) {
 		return nil, err
 	}
 
-	// Теперь мы можем безопасно создать файл
 	tempFile, err := os.Create(fullPath)
 	if err != nil {
 		return nil, err
