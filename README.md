@@ -40,14 +40,7 @@ svg - enable generation .svg files -svg=true/false
 Request
 
 ```http
-POST http://localhost:8080/api/all HTTP/1.1
-Content-Type: application/json
-{
-    "unit_guid": "01749246-95f6-57db-b7c3-2ae0e8be671f",
-    "limit": 2,
-    "page": 2
-}
---------------------------------------------
+
 POST https://localhost:8080/api/all HTTP/1.1
 Content-Type: application/json
 {
