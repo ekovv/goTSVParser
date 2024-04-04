@@ -6,5 +6,6 @@
   "dir_from": "from",
   "dir_to": "to",
   "dsn": "postgres://user:password@db:5432/dbname?sslmode=disable",
-  "refresh_interval": 10
+  "refresh_interval": 10,
+  "svg_gen": false
 }

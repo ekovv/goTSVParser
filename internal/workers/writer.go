@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"text/template"
 )
 
 type Writer struct {
@@ -81,6 +82,89 @@ func (s *Writer) WritePDF(tsv []shema.Tsv, unitGuid []string, filePath string) e
 			return fmt.Errorf("failed to write result")
 		}
 
+	}
+	return nil
+}
+
+type SVGData struct {
+	Height int
+	Lines  []string
+}
+
+func mul(a, b int) int {
+	return a * b
+}
+func add(a, b int) int {
+	return a + b
+}
+
+func (s *Writer) WriteSVG(tsv []shema.Tsv, unitGuid []string, filePath string) error {
+	svgTemplate, err := os.ReadFile("maket.svg")
+	if err != nil {
+		return fmt.Errorf("failed to read SVG template file: %w", err)
+	}
+
+	tmpl := template.New("svg").Funcs(template.FuncMap{
+		"mul": mul,
+		"add": add,
+	})
+	tmpl, err = tmpl.Parse(string(svgTemplate))
+	if err != nil {
+		return fmt.Errorf("failed to parse SVG template: %w", err)
+	}
+
+	lineHeight := 30
+	blockSpacing := 60
+
+	for _, guid := range unitGuid {
+
+		dir := filepath.Dir(strings.TrimPrefix(filePath, s.dirFrom))
+		if err := os.MkdirAll(s.dirTo+dir, 0755); err != nil {
+			return fmt.Errorf("failed to create directory: %w", err)
+		}
+
+		resultFile := s.dirTo + dir + "/" + guid + ".svg"
+		file, err := os.Create(resultFile)
+		if err != nil {
+			return fmt.Errorf("failed to create SVG file: %w", err)
+		}
+
+		defer file.Close()
+
+		var lines []string
+		for i, t := range tsv {
+			if guid == t.UnitGUID {
+				if i != 0 {
+					lines = append(lines, "")
+				}
+
+				lines = append(lines, "n: "+strings.TrimSpace(t.Number),
+					"mqtt: "+strings.TrimSpace(t.MQTT),
+					"invid: "+strings.TrimSpace(t.InventoryID),
+					"unit_guid: "+strings.TrimSpace(t.UnitGUID),
+					"msg_id: "+strings.TrimSpace(t.MessageID),
+					"text: "+strings.TrimSpace(t.MessageText),
+					"context: "+strings.TrimSpace(t.Context),
+					"class: "+strings.TrimSpace(t.MessageClass),
+					"level: "+strings.TrimSpace(t.Level),
+					"area: "+strings.TrimSpace(t.Area),
+					"addr: "+strings.TrimSpace(t.Address),
+					"block: "+strings.TrimSpace(t.Block),
+					"type: "+strings.TrimSpace(t.Type),
+					"bit: "+strings.TrimSpace(t.Bit),
+					"invert_bit: "+strings.TrimSpace(t.InvertBit))
+			}
+		}
+
+		data := SVGData{
+			Height: (len(lines) * lineHeight) + (len(tsv) * blockSpacing),
+			Lines:  lines,
+		}
+
+		err = tmpl.Execute(file, data)
+		if err != nil {
+			return fmt.Errorf("failed to execute SVG template: %w", err)
+		}
 	}
 	return nil
 }

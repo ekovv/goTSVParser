@@ -17,6 +17,7 @@ type Config struct {
 	DirectoryTo     string `json:"dir_to"`
 	DB              string `json:"dsn"`
 	RefreshInterval int    `json:"refresh_interval"`
+	SvgGen          bool   `json:"svg_gen"`
 	CFile           string
 }
 
@@ -29,6 +30,7 @@ type F struct {
 	directoryTo     *string
 	db              *string
 	refreshInterval *int
+	svgGen          *bool
 	cFile           *string
 }
 
@@ -45,6 +47,7 @@ func init() {
 	f.db = flag.String("d", "", "-d=db")
 	f.directoryTo = flag.String("t", "", "-t=to")
 	f.refreshInterval = flag.Int("r", 10, "interval of check")
+	f.svgGen = flag.Bool("svg", false, "-svg=")
 	f.cFile = flag.String("c", "", "config file")
 
 }
@@ -81,6 +84,7 @@ func New() (c Config) {
 	c.DB = *f.db
 	c.DirectoryTo = *f.directoryTo
 	c.RefreshInterval = *f.refreshInterval
+	c.SvgGen = *f.svgGen
 	c.CFile = *f.cFile
 	file, err := os.Open(c.CFile)
 	if err != nil {

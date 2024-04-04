@@ -108,10 +108,18 @@ loop:
 				return err
 			}
 
-			err = s.writer.WritePDF(tsvArray, guidArray, file)
-			if err != nil {
-				s.logger.Info(fmt.Sprintf("%s : failed to write pdf: %v", op, err))
-				return err
+			if s.config.SvgGen {
+				err := s.writer.WriteSVG(tsvArray, guidArray, file)
+				if err != nil {
+					s.logger.Info(fmt.Sprintf("%s : failed to write svg: %v", op, err))
+					return err
+				}
+			} else {
+				err = s.writer.WritePDF(tsvArray, guidArray, file)
+				if err != nil {
+					s.logger.Info(fmt.Sprintf("%s : failed to write pdf: %v", op, err))
+					return err
+				}
 			}
 		}
 	}

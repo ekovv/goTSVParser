@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" height="{{.Height}}" width="500">
+    {{range $i, $line := .Lines}}
+    <text x="10" y="{{add (mul $i 30) 30}}">{{.}}</text>
+    {{end}}
+</svg>

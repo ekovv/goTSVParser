@@ -3,6 +3,7 @@ module goTSVParser
 go 1.21
 
 require (
+	github.com/ajstarks/svgo v0.0.0-20211024235047-1546f124cd8b
 	github.com/gin-gonic/gin v1.9.1
 	github.com/golang-migrate/migrate/v4 v4.17.0
 	github.com/signintech/gopdf v0.23.1
