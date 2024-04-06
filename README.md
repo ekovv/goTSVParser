@@ -4,6 +4,14 @@
 
 Service for scanning directories with files in .tsv format and rewriting information into pdf/svg files
 
+# 💎 Build
+```
+
+docker compose up --build
+
+```
+
+
 # 🧩 Config
 
 ```json
