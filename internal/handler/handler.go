@@ -140,6 +140,7 @@ func (s *Handler) Start(ctx context.Context) {
 	}
 }
 
+// GetAll get info from db
 func (s *Handler) GetAll(c *gin.Context) {
 	var r shema.Request
 	err := c.ShouldBindJSON(&r)

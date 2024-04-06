@@ -28,6 +28,7 @@ func (w *Watcher) InitCheckedFiles(files []shema.ParsedFiles) {
 	}
 }
 
+// Scan main scan directory
 func (s *Watcher) Scan(ctx context.Context, out chan string) {
 	go func() {
 		timer := time.NewTicker(time.Duration(s.timer) * time.Second)

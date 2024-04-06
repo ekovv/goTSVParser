@@ -20,6 +20,7 @@ func NewWriter(cfg config.Config) *Writer {
 	return &Writer{dirTo: cfg.DirectoryTo, dirFrom: cfg.DirectoryFrom}
 }
 
+// WritePDF write pdf files
 func (s *Writer) WritePDF(tsv []shema.Tsv, unitGuid []string, filePath string) error {
 	for _, guid := range unitGuid {
 		pdf := gopdf.GoPdf{}
@@ -98,6 +99,7 @@ func add(a, b int) int {
 	return a + b
 }
 
+// WriteSVG write svg files
 func (s *Writer) WriteSVG(tsv []shema.Tsv, unitGuid []string, filePath string) error {
 	svgTemplate, err := os.ReadFile("maket.svg")
 	if err != nil {

@@ -28,6 +28,7 @@ func NewService(storage domains.Storage, watcher *workers.Watcher, parser *worke
 	return &Service{storage: storage, watcher: watcher, config: config, logger: logger, parser: parser, writer: writer}
 }
 
+// Worker main worker for scan & parse & generate files
 func (s *Service) Worker(ctx context.Context) error {
 	const op = "service.Worker"
 
@@ -126,6 +127,7 @@ loop:
 	return nil
 }
 
+// GetAll get data from db
 func (s *Service) GetAll(ctx context.Context, r shema.Request) ([][]shema.Tsv, error) {
 	const op = "service.GetAll"
 

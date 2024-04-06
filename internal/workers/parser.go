@@ -18,6 +18,7 @@ func NewParser(cfg config.Config) *Parser {
 	return &Parser{dirFrom: cfg.DirectoryFrom}
 }
 
+// ParseFileAsync parse file
 func (s *Parser) ParseFileAsync(fileName string) (<-chan shema.Tsv, <-chan string, <-chan error) {
 	tsvChan := make(chan shema.Tsv)
 	guidChan := make(chan string)
